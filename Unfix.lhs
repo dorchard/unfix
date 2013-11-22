@@ -12,6 +12,8 @@
 > import Data.Generics.Uniplate.Operations
 
 
+> fix f = f (fix f)
+
 > unfix :: Q [Dec] -> Q [Dec]
 > unfix qdecs = do qdecs' <- qdecs
 >                  gatherM unfix' qdecs'
