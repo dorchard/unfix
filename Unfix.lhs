@@ -22,7 +22,6 @@
 
 > unfix' (f@(SigD n t), rest) = case (lookupRest n rest) of
 >                                  Just fun -> if (isRecursive fun) then 
->                                                "boom" `trace`
 >                                                return $ SigD n (AppT (AppT (ArrowT) t) t)
 >                                              else
 >                                                return $ SigD n t
