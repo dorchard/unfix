@@ -15,12 +15,35 @@
 > fix f = f (fix f)
 
 > unfix :: Q [Dec] -> Q [Dec]
-> unfix qdecs = do qdecs' <- qdecs
->                  gatherM unfix' qdecs'
+> unfix qdecs = qdecs >>= gatherM unfix'
+
+> memo :: Q [Dec] -> Q [Dec]
+> memo qdecs = do qdecs' <- qdecs
+>                 gatherConcatM memofix' qdecs'
 
 > gatherM :: Monad m => ((a, [a]) -> m b) -> [a] -> m [b]
 > gatherM _ [] = return []
 > gatherM k (x:xs) = (k (x, xs)) >>= (\b -> gatherM k xs >>= (\bs -> return $ b : bs))
+
+> gatherConcatM :: Monad m => ((a, [a]) -> m [b]) -> [a] -> m [b]
+> gatherConcatM _ [] = return []
+> gatherConcatM k (x:xs) = (k (x, xs)) >>= (\b -> gatherConcatM k xs >>= (\bs -> return $ b ++ bs))
+
+Memofix declarations
+
+> memofix' (f@(SigD n t), rest) = return [f]
+> memofix' (f@(FunD n clauses), _) = if (isRecursive f) then 
+>                                      do n' <- newName "recf"
+>                                         nf <- newName ("u" ++ (nameBase n))
+>                                         clauses' <- return $ map (changePat n') clauses
+>                                         let memfixcall = AppE (VarE (mkName "memoFix")) (VarE nf)
+>                                         let newDec  = FunD n [Clause [] (NormalB memfixcall) []]
+>                                         return [newDec, FunD nf (rename n n' clauses')]
+>                                    else
+>                                      return [FunD n clauses]
+> memofix' _ = error "Can't currently 'unfix' anything other than singly recursive functions"
+
+Unfix declarations
 
 > unfix' (f@(SigD n t), rest) = case (lookupRest n rest) of
 >                                  Just fun -> if (isRecursive fun) then 
