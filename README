@@ -1,0 +1,41 @@
+This library provides a macro for syntactically transforming the declaration
+of a simple recursive function (non-mutually recursive), "untying" the recursive knot.
+
+Provides two combinators 'unfix' and 'refix' that are applied to Template Haskell declarations. 
+They untie the recursive knot for a simple recursive function, providing a parameter for the
+recursive call. e.g. 
+
+  {-# LANGUAGE TemplateHaskell #-}
+  import Language.Haskell.Unfix
+
+  unfix [d| fib :: Int -> Int
+            fib 0 = 1	 
+            fib 1 = 1
+            fib n = fib (n - 1) + fib (n - 2) |]
+
+At compile-time 'unfix' rewrites 'fib' here to:
+
+  fib :: (Int -> Int) -> Int -> Int
+  fib rec 0 = 1	 
+  fib rec 1 = 1
+  fib rec n = rec (n - 1) + rec (n - 2)
+
+This is useful if you want to replace the fixed-point with a non-standard fixed point
+ (e.g., with 'memoFix' for memoization), but don't want to have to rewrite your functions. 
+
+'refix' provides a way to replace the standard fixed-point, e.g.:
+
+  refix [| memoFix |]
+            [d| fibA :: Int -> Int 
+                fibA 0 = 1
+                fibA 1 = 1
+                fibA n = fibA (n - 1) + fibA (n - 2) |]
+
+which is rewritten to:
+
+  fibA :: Int -> Int
+  fibA = memoFix rec
+  fibA_unfix _ 0 = 1
+  fibA_unfix _ 1 = 1
+  fibA_unfix rec n = rec (n - 1) + rec (n - 2) 
+

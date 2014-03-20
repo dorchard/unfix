@@ -1,0 +1,56 @@
+name:                   unfix
+version:                0.5
+synopsis:               Syntactic transformation on simple (non-mutually recursive) functions that "unties" the recursive knot.
+
+description:            Provides two combinators 'unfix' and 'refix' that are apply to Template Haskell declaration. 
+			They "untie" the recursive knot for a simple recursive function, providing a parameter for the
+			recursive call. e.g. 
+			.
+			@
+			  &#x7b;-\# LANGUAGE TemplateHaskell \#-&#x7d;
+			  import Language.Haskell.Unfix
+ 			  .
+			  unfix [d| fib :: Int -> Int
+			  	    fib 0 = 1	 
+				    fib 1 = 1
+				    fib n = fib (n - 1) + fib (n - 2) |]
+                        @
+			rewrites 'fib' to:
+			@
+		          fib :: (Int -> Int) -> Int -> Int
+			  fib rec 0 = 1	 
+			  fib rec 1 = 1
+			  fib rec n = rec (n - 1) + rec (n - 2)
+			@
+			. 
+			This is useful if you want to replace the fixed-point with a non-standard fixed point
+			 (e.g., with 'memoFix' for memoization), but don't want to have to rewrite your functions. 
+			See example.hs.
+
+
+license:                BSD3
+license-file:           LICENSE
+category:               Syntax,
+copyright:              2014 University of Cambridge
+author:                 Dominic Orchard
+maintainer:             Dominic Orchard
+stability:              experimental
+build-type:             Simple
+cabal-version:          >= 1.6
+tested-with:            GHC >= 7.6
+
+extra-source-files:     example.hs
+
+
+source-repository head
+  type: git
+  location: https://github.com/dorchard/unfix
+
+library
+  hs-source-dirs:       .
+
+  exposed-modules:      Language.Haskell.Unfix
+                        
+  build-depends:        base < 5,
+                        template-haskell >= 2.8,
+                        uniplate >= 1.6

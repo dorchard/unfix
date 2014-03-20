@@ -5,7 +5,7 @@ module Language.Haskell.Unfix(fix, unfix, refix) where
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Syntax
 
-import Data.Generics
+import Data.Data
 import Data.Generics.Uniplate.Data
 import Data.Generics.Uniplate.Operations
 
