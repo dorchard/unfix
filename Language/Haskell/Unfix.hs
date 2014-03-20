@@ -38,7 +38,7 @@ unfix' (f@(SigD n t), rest) = case (lookupRest n rest) of
                                                return $ SigD n t
 
 unfix' (f@(FunD n clauses), _) = if (isRecursive f) then 
-                                   do n' <- newName "recf"
+                                   do n' <- newName ("recf" ++ (nameBase n))
                                       clauses' <- return $ map (changePat n') clauses
                                       return $ FunD n (rename n n' clauses')
                                  else
@@ -49,7 +49,7 @@ unfix' _ = error "Can't currently 'unfix' anything other than singly recursive f
 
 refix' _    (f@(SigD n t), rest) = return [f]
 refix' fixP (f@(FunD n clauses), _) = if (isRecursive f) then 
-                                     do n' <- newName "recf"
+                                     do n' <- newName ("recf" ++ (nameBase n))
                                         nf <- newName ("u" ++ (nameBase n))
                                         clauses' <- return $ map (changePat n') clauses
                                         fixP'    <- fixP
