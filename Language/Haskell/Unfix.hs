@@ -17,7 +17,8 @@ unfix qdecs = qdecs >>= gatherM unfix'
 
 refix :: Q Exp -> Q [Dec] -> Q [Dec]
 refix fixP qdecs = do qdecs' <- qdecs
-                      gatherConcatM (refix' fixP) qdecs'
+                      fixP'  <- fixP
+                      gatherConcatM (refix' fixP') qdecs'
 
 -- Monadic cobind-like operation 
 
@@ -31,9 +32,10 @@ gatherConcatM k (x:xs) = (k (x, xs)) >>= (\b -> gatherConcatM k xs >>= (\bs -> r
 
 -- Unfix declarations
 
+unfix' :: (Dec, [Dec]) -> Q (Dec)
 unfix' (f@(SigD n t), rest) = case (lookupRest n rest) of
                                  Just fun -> if (isRecursive fun) then 
-                                               return $ SigD n (AppT (AppT (ArrowT) t) t)
+                                               return $ SigD n (unfixType t)
                                              else
                                                return $ SigD n t
 
@@ -44,16 +46,22 @@ unfix' (f@(FunD n clauses), _) = if (isRecursive f) then
                                  else
                                       return $ FunD n clauses
 unfix' _ = error "Can't currently 'unfix' anything other than singly recursive functions"
+
+
+-- Generate the type of the 'unfix'ed function
+unfixType :: Type -> Type
+unfixType (ForallT binders ctx typ) = ForallT binders ctx (AppT (AppT ArrowT typ) typ)
+unfixType t                          = AppT (AppT ArrowT t) t
     
 -- Refix with the 'fixP' operator a declaration
 
+refix' :: Exp -> (Dec, [Dec]) -> Q [Dec]
 refix' _    (f@(SigD n t), rest) = return [f]
 refix' fixP (f@(FunD n clauses), _) = if (isRecursive f) then 
                                      do n' <- newName ("recf" ++ (nameBase n))
                                         nf <- newName ("u" ++ (nameBase n))
                                         clauses' <- return $ map (changePat n') clauses
-                                        fixP'    <- fixP
-                                        let memfixcall = AppE fixP' (VarE nf)
+                                        let memfixcall = AppE fixP (VarE nf)
                                         let newDec  = FunD n [Clause [] (NormalB memfixcall) []]
                                         return [newDec, FunD nf (rename n n' clauses')]
                                    else
