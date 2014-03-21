@@ -23,6 +23,13 @@ unfix
      fib'' 1 = 1
      fib'' n = fib'' (n - 1) + fib'' (n - 2) |]
 
+-- This example has a more general type
+unfix 
+ [d| fibB :: (Eq a, Num a) => (a -> a) 
+     fibB 0 = 1
+     fibB 1 = 1
+     fibB n = fibB (n - 1) + fibB (n - 2) |]
+
 -- Use "refix" to call "memoFix" on the unfixed function
 
 refix [| memoFix |]
